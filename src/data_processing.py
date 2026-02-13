@@ -1,12 +1,26 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import os
 
-df = None
+# Get the directory where this file is located
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+# Load from space_missions.csv in the same directory as this file
+_csv_path = os.path.join(_current_dir, "space_missions.csv")
 
-def load_data(path="src/data/space_missions (1) 2.csv"):
+# Load data at module level
+df = pd.read_csv(_csv_path)
+df['Date'] = pd.to_datetime(df['Date'])
+df['Year'] = df['Date'].dt.year
+
+def load_data(path=None):
+    """Load data from CSV file. If no path provided, uses space_missions.csv in same directory."""
     global df
+    if path is None:
+        path = _csv_path
     df = pd.read_csv(path)
+    df['Date'] = pd.to_datetime(df['Date'])
+    df['Year'] = df['Date'].dt.year
     return df
 
 '''
@@ -17,7 +31,10 @@ Function 1: `getMissionCountByCompany(companyName: str) -> int`
 **Output**:
 - Integer representing the total number of missions
 '''
-def getMissionCountByCompany(companyName:str) -> int:
+def getMissionCountByCompany(companyName: str) -> int:
+    """Returns the total number of missions for a given company."""
+    if not isinstance(companyName, str):
+        return 0
     return df[df['Company'] == companyName].shape[0]
 
 '''
@@ -31,11 +48,15 @@ Function 2: `getSuccessRate(companyName: str) -> float`
 - Return `0.0` if company has no missions
 '''    
 def getSuccessRate(companyName: str) -> float:
+    """Calculates the success rate for a given company as a percentage."""
+    if not isinstance(companyName, str):
+        return 0.0
+
     companyData = df[df['Company'] == companyName]
     if len(companyData) == 0:
-        return float(0.0)
-    
-    successCount = companyData['MissionStatus'].str.contains('Success')
+        return 0.0
+
+    successCount = companyData['MissionStatus'].str.contains('Success', na=False)
     return round(sum(successCount) / len(successCount) * 100, 2)
 
 '''
@@ -52,12 +73,13 @@ def getMissionsByDateRange(startDate: str, endDate: str) -> list:
     if not isValidDate(startDate) or not isValidDate(endDate):
         print("Incorrect Time Format. Need 'YYYY-MM-DD'")
         return []
-    
-    df['Date'] = pd.to_datetime(df['Date'])
-    ans = df[df['Date'] <= datetime.strptime(endDate, "%Y-%m-%d")]
-    ans = ans[datetime.strptime(startDate, "%Y-%m-%d") <= ans['Date']]
-    
-    return list(ans['Mission'])
+
+    start_dt = pd.to_datetime(startDate)
+    end_dt = pd.to_datetime(endDate)
+
+    ans = df[(df['Date'] >= start_dt) & (df['Date'] <= end_dt)]
+
+    return sorted(list(ans['Mission']))
 
 def isValidDate(s:str) -> bool:
     if not isinstance(s, str) or len(s) != 10:
@@ -124,8 +146,7 @@ getMissionsByYear(2020) # Returns: 114
 '''
 
 def getMissionsByYear(year: int) -> int:
-    df['Date'] = pd.to_datetime(df['Date'])
-    df['Year'] = df['Date'].dt.year
+    # Year column is already created at module load
     return len(df[df['Year'] == year])
 
 
