@@ -84,8 +84,8 @@ class TestFunctions:
 
         # Calculate expected missions from raw data
         expected_missions = df[
-            (df['Date'] >= pd.to_datetime(start_date)) &
-            (df['Date'] <= pd.to_datetime(end_date))
+            (df['Date'] >= pd.to_datetime(start_date).date()) &
+            (df['Date'] <= pd.to_datetime(end_date).date())
         ]['Mission'].tolist()
         expected_missions_sorted = sorted(expected_missions)
 
@@ -99,14 +99,14 @@ class TestFunctions:
         # Test with a single day range
         single_day = '1957-10-04'
         missions_single = getMissionsByDateRange(single_day, single_day)
-        expected_single = df[df['Date'] == pd.to_datetime(single_day)]['Mission'].tolist()
+        expected_single = df[df['Date'] == pd.to_datetime(single_day).date()]['Mission'].tolist()
         assert len(missions_single) == len(expected_single)
 
         # Test with a broader range (entire year)
         missions_year = getMissionsByDateRange('2020-01-01', '2020-12-31')
         expected_year = df[
-            (df['Date'] >= pd.to_datetime('2020-01-01')) &
-            (df['Date'] <= pd.to_datetime('2020-12-31'))
+            (df['Date'] >= pd.to_datetime('2020-01-01').date()) &
+            (df['Date'] <= pd.to_datetime('2020-12-31').date())
         ]['Mission'].tolist()
         assert len(missions_year) == len(expected_year)
 
@@ -117,8 +117,8 @@ class TestFunctions:
         # Test with date range before any missions (if applicable)
         missions_past = getMissionsByDateRange('1900-01-01', '1950-12-31')
         expected_past = df[
-            (df['Date'] >= pd.to_datetime('1900-01-01')) &
-            (df['Date'] <= pd.to_datetime('1950-12-31'))
+            (df['Date'] >= pd.to_datetime('1900-01-01').date()) &
+            (df['Date'] <= pd.to_datetime('1950-12-31').date())
         ]['Mission'].tolist()
         assert len(missions_past) == len(expected_past)
 
@@ -150,7 +150,7 @@ class TestFunctions:
         if len(df) > 0:
             specific_date = df.iloc[0]['Date'].strftime('%Y-%m-%d')
             missions_boundary = getMissionsByDateRange(specific_date, specific_date)
-            expected_boundary = df[df['Date'] == pd.to_datetime(specific_date)]['Mission'].tolist()
+            expected_boundary = df[df['Date'] == pd.to_datetime(specific_date).date()]['Mission'].tolist()
             assert len(missions_boundary) == len(expected_boundary), \
                 "Start and end dates should be inclusive"
         
@@ -231,6 +231,9 @@ class TestFunctions:
         top_5_again = getTopCompaniesByMissionCount(5)
         assert top_5 == top_5_again, "Function should return consistent results"
     
+    
+    
+    
     def test_getMissionStatusCount(self, df):
         """Test getting mission status counts."""
 
@@ -265,6 +268,9 @@ class TestFunctions:
         status_count_again = getMissionStatusCount()
         assert status_count == status_count_again, "Function should return consistent results"
     
+    
+    
+    
     def test_getMissionsByYear(self, df):
         """Test getting missions by year."""
 
@@ -274,22 +280,22 @@ class TestFunctions:
         # Verify return type is int
         assert isinstance(count_2020, int), f"Expected int, got {type(count_2020)}"
 
-        # Calculate expected count from data
-        expected_2020 = len(df[df['Year'] == 2020])
+        # Calculate expected count from data (extract year from Date column)
+        expected_2020 = len(df[df['Date'].apply(lambda x: x.year) == 2020])
         assert count_2020 == expected_2020, \
             f"Expected {expected_2020} missions in 2020, got {count_2020}"
 
         # Test with the first year in the dataset
-        first_year = df['Year'].min()
+        first_year = df['Date'].apply(lambda x: x.year).min()
         count_first = getMissionsByYear(first_year)
-        expected_first = len(df[df['Year'] == first_year])
+        expected_first = len(df[df['Date'].apply(lambda x: x.year) == first_year])
         assert count_first == expected_first, \
             f"Expected {expected_first} missions in {first_year}, got {count_first}"
 
         # Test with the last year in the dataset
-        last_year = df['Year'].max()
+        last_year = df['Date'].apply(lambda x: x.year).max()
         count_last = getMissionsByYear(last_year)
-        expected_last = len(df[df['Year'] == last_year])
+        expected_last = len(df[df['Date'].apply(lambda x: x.year) == last_year])
         assert count_last == expected_last, \
             f"Expected {expected_last} missions in {last_year}, got {count_last}"
 
@@ -305,7 +311,7 @@ class TestFunctions:
         # Test multiple years and verify counts
         for year in [2018, 2019, 2021]:
             count = getMissionsByYear(year)
-            expected = len(df[df['Year'] == year])
+            expected = len(df[df['Date'].apply(lambda x: x.year) == year])
             assert count == expected, f"Year {year}: expected {expected}, got {count}"
 
         # Verify count is non-negative
@@ -314,6 +320,9 @@ class TestFunctions:
         # Test consistency: calling twice should give same result
         count_2020_again = getMissionsByYear(2020)
         assert count_2020 == count_2020_again, "Function should return consistent results"
+    
+    
+    
     
     def test_getMostUsedRocket(self, df):
         """Test getting the most used rocket."""
@@ -352,6 +361,9 @@ class TestFunctions:
         rocket_again = getMostUsedRocket()
         assert rocket == rocket_again, "Function should return consistent results"
     
+    
+    
+    
     def test_getAverageMissionsPerYear(self, df):
         """Test getting average missions per year."""
 
@@ -361,8 +373,9 @@ class TestFunctions:
         # Verify return type is float
         assert isinstance(avg_2018_2020, float), f"Expected float, got {type(avg_2018_2020)}"
 
-        # Calculate expected average from raw data
-        missions_in_range = df[df['Year'].between(2018, 2020)]
+        # Calculate expected average from raw data (extract year from Date column)
+        df_years = df['Date'].apply(lambda x: x.year)
+        missions_in_range = df[df_years.between(2018, 2020)]
         expected_avg = round(len(missions_in_range) / 3, 2)  # 3 years: 2018, 2019, 2020
 
         assert avg_2018_2020 == expected_avg, \
@@ -370,13 +383,13 @@ class TestFunctions:
 
         # Test with single year range (2020-2020)
         avg_single = getAverageMissionsPerYear(2020, 2020)
-        expected_single = round(len(df[df['Year'] == 2020]) / 1, 2)
+        expected_single = round(len(df[df_years == 2020]) / 1, 2)
         assert avg_single == expected_single, \
             f"Single year: expected {expected_single}, got {avg_single}"
 
         # Test with 2-year range
         avg_2019_2020 = getAverageMissionsPerYear(2019, 2020)
-        missions_2019_2020 = df[df['Year'].between(2019, 2020)]
+        missions_2019_2020 = df[df_years.between(2019, 2020)]
         expected_2019_2020 = round(len(missions_2019_2020) / 2, 2)
         assert avg_2019_2020 == expected_2019_2020, \
             f"2019-2020: expected {expected_2019_2020}, got {avg_2019_2020}"
@@ -396,8 +409,8 @@ class TestFunctions:
             "Negative year range should return 0.0"
 
         # Test with very large range
-        first_year = int(df['Year'].min())
-        last_year = int(df['Year'].max())
+        first_year = int(df_years.min())
+        last_year = int(df_years.max())
         avg_all = getAverageMissionsPerYear(first_year, last_year)
         num_years = last_year - first_year + 1
         expected_all = round(len(df) / num_years, 2)
