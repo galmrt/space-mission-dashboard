@@ -29,11 +29,15 @@ default_start_date = df["Date"].min()
 default_end_date = df["Date"].max()
 
 def reset_date_range():
-    if 'date_range_widget' in st.session_state:
-        del st.session_state['date_range_widget']
     st.session_state.date_range = (default_start_date, default_end_date)
-    
-    
+    st.session_state.reset_counter += 1
+
+# Initialize session state
+if 'date_range' not in st.session_state:
+    st.session_state.date_range = (default_start_date, default_end_date)
+if 'reset_counter' not in st.session_state:
+    st.session_state.reset_counter = 0
+       
 with st.sidebar:
     # add header  
     st.header("Filters", divider=True, )
@@ -42,25 +46,23 @@ with st.sidebar:
     # multiselect to select values
     selected_values = st.multiselect("Filter by: ", df[selected_column].unique(), placeholder="Filter by values")
     
-    # Initialize date range in session state
-    if 'date_range' not in st.session_state:
-        st.session_state.date_range = (default_start_date, default_end_date)
 
-    # date range - use default or session state value
+
+# The widget itself – controlled by session state with dynamic key
     selected_range = st.date_input(
-        "Select a date range",
-        help="Choose your start and end dates",
-        value=st.session_state.date_range,
-        key='date_range_widget'
+        "Select date range",
+        value=[],
+        min_value=default_start_date,
+        max_value=default_end_date,
+        key=f'date_range_widget_{st.session_state.reset_counter}'
     )
     
-    st.button("Reset Date Range", on_click=reset_date_range)
-
-    # Update session state if both dates are selected
+    # Sync back to session state
     if isinstance(selected_range, tuple) and len(selected_range) == 2:
         st.session_state.date_range = selected_range
-    else:
-        st.session_state.date_range = (default_start_date, default_end_date)
+        
+    # Reset button
+    st.button("Reset Date Range", on_click=reset_date_range)
 
 
 # Filter rows based on selected values from the selected column
@@ -69,7 +71,10 @@ if selected_values:
 else:
     filtered_df = df
 
-filtered_df = filtered_df[(filtered_df["Date"] >= st.session_state.date_range[0]) & (filtered_df["Date"] <= st.session_state.date_range[1])]
+# Date filter (using the controlled session state value)
+start_date, end_date = st.session_state.date_range
+filtered_df = filtered_df[(filtered_df["Date"] >= start_date) &
+    (filtered_df["Date"] <= end_date)]
 
 # Output dataframe which user can filter
 st.header("Original Data")
