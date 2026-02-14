@@ -3,9 +3,9 @@ import numpy as np
 from datetime import datetime
 import os
 
-# Get the directory where this file is located
+# Get the directory path and load from space_missions.csv
 _current_dir = os.path.dirname(os.path.abspath(__file__))
-# Load from space_missions.csv in the same directory as this file
+
 _csv_path = os.path.join(_current_dir, "space_missions.csv")
 
 # Load data at module level
@@ -72,7 +72,6 @@ def getMissionsByDateRange(startDate: str, endDate: str) -> list:
     start_dt = pd.to_datetime(startDate).date()
     end_dt = pd.to_datetime(endDate).date()
 
-    # Filter using apply to ensure proper date comparison
     mask = df['Date'].apply(lambda x: start_dt <= x <= end_dt)
     ans = df[mask]
 
@@ -103,11 +102,10 @@ def getTopCompaniesByMissionCount(n: int) -> list:
         
     vals = df['Company'].value_counts()[:n]
     ans = []
-    #convert to tuples
+
     for label, item in vals.items():
         ans.append((label, item))
 
-    # sort by specific value
     ans.sort(key = lambda x: (-x[1], x[0]), reverse=False)
     return ans
 
@@ -143,7 +141,6 @@ getMissionsByYear(2020) # Returns: 114
 '''
 
 def getMissionsByYear(year: int) -> int:
-    # Year column is already created at module load
     return len(df[df['Date'].apply(lambda x: x.year) == year])
 
 
