@@ -16,6 +16,10 @@ This dashboard provides an overview of space missions from 1957 to 2023. The dat
 """)
 
 df = dp.load_data()
+
+#-----------------------------
+# Data filtering
+#-----------------------------
 default_start_date = df["Date"].min()
 default_end_date = df["Date"].max()
 
@@ -30,8 +34,9 @@ if 'date_range' not in st.session_state:
 if 'reset_counter' not in st.session_state:
     st.session_state.reset_counter = 0
 
-with st.sidebar:
-    st.header("Filters", divider=True)
+data_col1, data_col2 = st.columns([1, 8])
+with data_col1:
+    st.markdown("#### Filters")
     selected_column = st.selectbox("Attribute: ", df.columns, index=0)
     selected_values = st.multiselect("Filter by: ", df[selected_column].unique(), placeholder="Filter by values")
 
@@ -49,23 +54,74 @@ with st.sidebar:
 
     st.button("Reset Date Range", on_click=reset_date_range)
 
-
 if selected_values:
     filtered_df = df[df[selected_column].isin(selected_values)]
 else:
     filtered_df = df
-
 start_date, end_date = st.session_state.date_range
 filtered_df = filtered_df[(filtered_df["Date"] >= start_date) & (filtered_df["Date"] <= end_date)]
 
-st.header("Original Data")
-st.dataframe(filtered_df, use_container_width=True)
+with data_col2:
+    st.dataframe(filtered_df, use_container_width=True)
+st.divider()
 
+st.header("🌍 Global Launch Activity")
+st.write("This map shows the distribution of space missions across different countries. Darker colors indicate more launches.")
 fig = viz.create_missions_by_country_map(df)
 st.plotly_chart(fig, use_container_width=True)
 
+st.divider()
+
+st.header("📅 Company Activity Over Time")
+st.write("This heatmap displays when each company was most active in launching missions. Each row represents a company, and the color intensity shows the number of launches per year.")
 fig2 = viz.create_company_activity_heatmap(df)
 st.plotly_chart(fig2, use_container_width=True)
 
-fig3 = viz.create_histogram(df, 'MissionStatus')
-st.plotly_chart(fig3, use_container_width=True)
+st.divider()
+
+st.header("📊 Data Exploration")
+st.write("Create custom histograms to explore the distribution of different attributes in the dataset. Click 'Add histogram' to get started.")
+
+allowed_columns_hist = ["Company", "Date", "Time", "RocketStatus", "MissionStatus", 'Rocket']
+
+if 'histograms' not in st.session_state:
+    st.session_state.histograms = []
+if 'hist_counter' not in st.session_state:
+    st.session_state.hist_counter = 0
+
+def add_histogram():
+    st.session_state.hist_counter += 1
+    st.session_state.histograms.append({"id": st.session_state.hist_counter})
+
+def remove_histogram(hist_id):
+    st.session_state.histograms = [h for h in st.session_state.histograms if h["id"] != hist_id]
+
+for i, hist in enumerate(st.session_state.histograms):
+    hist_id = hist["id"]
+    already_selected = [
+        st.session_state.get(f'hist_select_{h["id"]}')
+        for h in st.session_state.histograms
+        if h["id"] != hist_id and st.session_state.get(f'hist_select_{h["id"]}')
+    ]
+    available_columns = [col for col in allowed_columns_hist if col not in already_selected]
+
+    col1, col2 = st.columns([2, 9])
+    with col1:
+        selected = st.selectbox(
+            f"Select attribute for histogram {i+1}:",
+            available_columns,
+            index=0,
+            key=f'hist_select_{hist_id}',
+            width = 300
+        )
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.button("Remove histogram", key=f'remove_hist_{hist_id}', on_click=remove_histogram, args=(hist_id,), type="tertiary")
+
+    fig = viz.create_histogram(df, selected)
+    st.plotly_chart(fig, use_container_width=True, key=f'hist_chart_{hist_id}')
+
+if len(st.session_state.histograms) == len(allowed_columns_hist):
+    st.warning("No more columns available for histograms")
+else:
+    st.button("Add histogram", on_click=add_histogram)
