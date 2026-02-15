@@ -8,9 +8,43 @@ _current_dir = os.path.dirname(os.path.abspath(__file__))
 
 _csv_path = os.path.join(_current_dir, "space_missions.csv")
 
-# Load data at module level
-df = pd.read_csv(_csv_path)
-df['Date'] = pd.to_datetime(df['Date']).dt.date
+# Required columns for the application
+REQUIRED_COLUMNS = ['Company', 'Location', 'Date', 'Time', 'Rocket', 'Mission', 'RocketStatus', 'Price', 'MissionStatus']
+
+
+class DataValidationError(Exception):
+    """Custom exception for data validation errors."""
+    pass
+
+
+def validate_data(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Validate and clean the dataframe.
+    Raises DataValidationError if critical issues are found.
+    Returns cleaned dataframe.
+    """
+    errors = []
+
+    # Check required columns exist
+    missing_columns = set(REQUIRED_COLUMNS) - set(df.columns)
+    if missing_columns:
+        errors.append(f"Missing required columns: {missing_columns}")
+    if errors:
+        raise DataValidationError("\n".join(errors))
+
+    # Remove rows with invalid dates
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    df = df.dropna(subset=['Date'])
+    df['Date'] = df['Date'].dt.date
+
+    # Remove rows with missing values
+    critical_columns = ['Mission', 'MissionStatus']
+    for col in critical_columns:
+        df = df.dropna(subset=[col])
+
+    df = df.drop_duplicates()
+    
+    return df.reset_index(drop=True)
 
 
 def load_data(path=None):
@@ -18,9 +52,17 @@ def load_data(path=None):
     global df
     if path is None:
         path = _csv_path
+        
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Data file not found: {path}")
+
     df = pd.read_csv(path)
-    df['Date'] = pd.to_datetime(df['Date']).dt.date
+    df = validate_data(df)
     return df
+
+
+# Load data at module level
+df = load_data(_csv_path)
 
 '''
 Function 1: `getMissionCountByCompany(companyName: str) -> int`
@@ -67,10 +109,9 @@ endDate (inclusive).
 - List of strings containing mission names, sorted chronologically
 '''
 def getMissionsByDateRange(startDate: str, endDate: str) -> list:
-    if not isValidDate(startDate) or not isValidDate(endDate):
-        print("Incorrect Time Format. Need 'YYYY-MM-DD'")
+    if not isValidDate(startDate) or not isValidDate(endDate) or startDate > endDate:
         return []
-
+    
     start_dt = pd.to_datetime(startDate).date()
     end_dt = pd.to_datetime(endDate).date()
 
@@ -79,6 +120,7 @@ def getMissionsByDateRange(startDate: str, endDate: str) -> list:
     ans = df[mask]
 
     return list(ans.sort_values('Date')['Mission'])
+
 
 def isValidDate(s:str) -> bool:
     if not isinstance(s, str) or len(s) != 10:
@@ -100,7 +142,7 @@ Function 4: `getTopCompaniesByMissionCount(n: int) -> list`
 - If companies have the same count, sort alphabetically by company name
 ''' 
 def getTopCompaniesByMissionCount(n: int) -> list:
-    if n < 0:
+    if not isinstance(n, int) or n <= 0:
         return []
         
     vals = df['Company'].value_counts()[:n]
@@ -144,6 +186,8 @@ getMissionsByYear(2020) # Returns: 114
 '''
 
 def getMissionsByYear(year: int) -> int:
+    if not isinstance(year, int):
+        return 0
     return len(df[df['Date'].apply(lambda x: x.year) == year])
 
 
@@ -173,7 +217,7 @@ Function 8: `getAverageMissionsPerYear(startYear: int, endYear: int) -> float`
 - Float representing average missions per year, rounded to 2 decimal places
 '''
 def getAverageMissionsPerYear(startYear: int, endYear: int) -> float:
-    if startYear > endYear or startYear < 0 or endYear < 0:
+    if not isinstance(startYear, int) or not isinstance(endYear, int) or startYear > endYear:
         return 0.0
 
     years = pd.Series(df['Date']).apply(lambda x: x.year)

@@ -5,7 +5,6 @@ from src import visualizations as viz
 
 st.set_page_config(
     page_title="Space Mission Dashboard",
-    page_icon="🚀",
     layout="wide",
     initial_sidebar_state="expanded",
 )
