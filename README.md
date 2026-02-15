@@ -1,6 +1,7 @@
 # Space Missions Dashboard 🚀
 
 Interactive dashboard for analyzing historical space mission data from 1957 onwards.
+
 Dashboard is available at: https://space-mission-dashboard-hcw8it9wsyqlmxpuq39t4y.streamlit.app
 
 ## Dashboard Features
