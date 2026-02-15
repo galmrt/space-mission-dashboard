@@ -51,7 +51,7 @@ with data_col1:
     if isinstance(selected_range, tuple) and len(selected_range) == 2:
         st.session_state.date_range = selected_range
 
-    st.button("Reset Date Range", on_click=reset_date_range)
+    st.button("Reset dates", on_click=reset_date_range)
 
 if selected_values:
     filtered_df = df[df[selected_column].isin(selected_values)]
@@ -98,6 +98,7 @@ st.header("🌍 Global Launch Activity")
 st.write("This map shows the distribution of space missions across different countries. Darker colors indicate more launches.")
 fig = viz.create_missions_by_country_map(df)
 st.plotly_chart(fig, use_container_width=True)
+st.caption("**Key Insight:** Russia (USSR), USA, and Kazakhstan dominate global launch activity, reflecting the Cold War space race legacy and continued investment in space programs.")
 
 st.divider()
 
@@ -108,6 +109,7 @@ st.header("📅 Company Activity Over Time")
 st.write("This heatmap displays when each company was most active in launching missions. Each row represents a company, and the color intensity shows the number of launches per year.")
 fig2 = viz.create_company_activity_heatmap(df)
 st.plotly_chart(fig2, use_container_width=True)
+st.caption("**Key Insight:** RVSN USSR was highly active during the 1970s-80s. SpaceX shows rapid growth from 2015 onwards, reflecting the rise of commercial spaceflight.")
 
 st.divider()
 
@@ -116,6 +118,7 @@ st.divider()
 #-----------------------------
 st.header("📊 Data Exploration")
 st.write("Create custom histograms to explore the distribution of different attributes in the dataset. Click 'Add histogram' to get started.")
+st.caption("**Tip:** Try the 'Time' histogram to see that most launches occur during daytime hours (06:00-18:00 UTC).")
 
 allowed_columns_hist = ["Company", "Date", "Time", "RocketStatus", "MissionStatus", 'Rocket']
 

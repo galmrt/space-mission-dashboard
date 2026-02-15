@@ -142,7 +142,7 @@ Function 4: `getTopCompaniesByMissionCount(n: int) -> list`
 - If companies have the same count, sort alphabetically by company name
 ''' 
 def getTopCompaniesByMissionCount(n: int) -> list:
-    if not isinstance(n, int) or n <= 0:
+    if not isinstance(n, (int, np.integer)) or n <= 0:
         return []
         
     vals = df['Company'].value_counts()[:n]
@@ -217,7 +217,7 @@ Function 8: `getAverageMissionsPerYear(startYear: int, endYear: int) -> float`
 - Float representing average missions per year, rounded to 2 decimal places
 '''
 def getAverageMissionsPerYear(startYear: int, endYear: int) -> float:
-    if not isinstance(startYear, int) or not isinstance(endYear, int) or startYear > endYear:
+    if not isinstance(startYear, (int, np.integer)) or not isinstance(endYear, (int, np.integer)) or startYear > endYear:
         return 0.0
 
     years = pd.Series(df['Date']).apply(lambda x: x.year)
