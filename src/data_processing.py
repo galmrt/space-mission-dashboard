@@ -186,7 +186,7 @@ getMissionsByYear(2020) # Returns: 114
 '''
 
 def getMissionsByYear(year: int) -> int:
-    if not isinstance(year, int):
+    if not isinstance(year, (int, np.integer)):
         return 0
     return len(df[df['Date'].apply(lambda x: x.year) == year])
 
