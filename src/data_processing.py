@@ -47,12 +47,14 @@ Function 2: `getSuccessRate(companyName: str) -> float`
 - Return `0.0` if company has no missions
 '''    
 def getSuccessRate(companyName: str) -> float:
+    if not isinstance(companyName, str):
+        return 0.0
     companyData = df[df['Company'] == companyName]
     if len(companyData) == 0:
         return 0.0
-    
-    successCount = companyData['MissionStatus'].str.contains('Success')
-    return round(sum(successCount) / len(successCount) * 100, 2)
+
+    successCount = (companyData['MissionStatus'] == 'Success').sum()
+    return round(successCount / len(companyData) * 100, 2)
 
 '''
 Function 3: `getMissionsByDateRange(startDate: str, endDate: str) -> list`
@@ -72,10 +74,11 @@ def getMissionsByDateRange(startDate: str, endDate: str) -> list:
     start_dt = pd.to_datetime(startDate).date()
     end_dt = pd.to_datetime(endDate).date()
 
-    mask = df['Date'].apply(lambda x: start_dt <= x <= end_dt)
+    dates = pd.Series(df['Date'])
+    mask = (dates >= start_dt) & (dates <= end_dt)
     ans = df[mask]
 
-    return sorted(list(ans['Mission']))
+    return list(ans.sort_values('Date')['Mission'])
 
 def isValidDate(s:str) -> bool:
     if not isinstance(s, str) or len(s) != 10:
@@ -151,7 +154,7 @@ def getMissionsByYear(year: int) -> int:
 - String containing the rocket name
 - If multiple rockets have the same count, return the first one alphabetically'''
 
-def getMostUsedRocket():
+def getMostUsedRocket() -> str:
     if df.empty:
         return ''
 
@@ -172,8 +175,7 @@ Function 8: `getAverageMissionsPerYear(startYear: int, endYear: int) -> float`
 def getAverageMissionsPerYear(startYear: int, endYear: int) -> float:
     if startYear > endYear or startYear < 0 or endYear < 0:
         return 0.0
-    
-    totalCount = 0
-    for year in range(startYear, endYear + 1):
-        totalCount += getMissionsByYear(year)
+
+    years = pd.Series(df['Date']).apply(lambda x: x.year)
+    totalCount = ((years >= startYear) & (years <= endYear)).sum()
     return round(totalCount / (endYear - startYear + 1), 2)

@@ -427,12 +427,6 @@ class TestFunctions:
         # Test consistency: calling twice should give same result
         avg_again = getAverageMissionsPerYear(2018, 2020)
         assert avg_2018_2020 == avg_again, "Function should return consistent results"
-        
-    
-    
-        
-
-
 
 
 

@@ -5,6 +5,7 @@ import pandas as pd
 
 def create_missions_by_country_map(df: pd.DataFrame) -> px.choropleth:
     """Create a choropleth map showing space missions by country."""
+    df = df.copy()
     df['Country'] = df['Location'].str.split(', ').str[-1]
     missions_by_country = df['Country'].value_counts().reset_index()
     missions_by_country.columns = ['Country', 'Missions']
@@ -136,11 +137,17 @@ def create_company_activity_heatmap(df: pd.DataFrame, top_n: int = 20) -> go.Fig
 
     return fig
 
+def _filter_by_min_count(df: pd.DataFrame, column: str, min_count: int = 50) -> pd.DataFrame:
+    """Filter dataframe to only include rows where column value appears at least min_count times."""
+    value_counts = df[column].value_counts()
+    values_over_threshold = value_counts[value_counts > min_count].index.tolist()
+    return df[df[column].isin(values_over_threshold)]
+
+
 def create_histogram(df, column):
     """Create a styled histogram for the given column."""
     df = df.copy()
 
-    # Special handling for Time column
     if column == 'Time':
         df['Hour'] = df['Time'].apply(lambda x: int(str(x).split(':')[0]) if pd.notna(x) else None)
         df = df.dropna(subset=['Hour'])
@@ -163,21 +170,8 @@ def create_histogram(df, column):
             )
         )
         title_text = 'Distribution of Launch Times (by Hour)'
-    elif column == 'Company':
-        company_counts = df['Company'].value_counts()
-        companies_over_100 = company_counts[company_counts > 50].index.tolist()
-        df = df[df['Company'].isin(companies_over_100)]
-
-        fig = px.histogram(
-            df,
-            x=column,
-            color_discrete_sequence=['#4C78A8']
-        )
-        title_text = f'Distribution of {column} (50+ launches)'
-    elif column == 'Rocket':
-        rocket_counts = df['Rocket'].value_counts()
-        rockets_over_50 = rocket_counts[rocket_counts > 50].index.tolist()
-        df = df[df['Rocket'].isin(rockets_over_50)]
+    elif column in ('Company', 'Rocket'):
+        df = _filter_by_min_count(df, column, min_count=50)
 
         fig = px.histogram(
             df,

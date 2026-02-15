@@ -65,6 +65,36 @@ with data_col2:
     st.dataframe(filtered_df, use_container_width=True)
 st.divider()
 
+#-----------------------------
+# Summary statistics
+#-----------------------------
+cols = st.columns([1, 1, 1.4, 0.8, 0.8])
+with cols[0]:
+    st.metric("Total Missions", len(df))
+with cols[1]:
+    st.metric("First Mission", df["Date"].min().strftime("%d %B %Y"))
+with cols[2]:
+    st.metric("Most used Rocket", dp.getMostUsedRocket())
+with cols[3]:
+    st.metric("Company with most missions", dp.getTopCompaniesByMissionCount(1)[0][0])
+with cols[4]:
+    firstYear = df["Date"].apply(lambda x: x.year).min()
+    lastYear = df["Date"].apply(lambda x: x.year).max()
+    st.metric("Average missions per year", dp.getAverageMissionsPerYear(firstYear, lastYear))
+
+cols = st.columns([1, 1, 3])
+with cols[0]:
+    st.metric("Number of Companies", len(df["Company"].unique()))
+with cols[1]:
+    st.metric("Last Mission", df["Date"].max().strftime("%d %B %Y"))
+with cols[2]:
+    most_used_location = df["Location"].value_counts().index[0]
+    st.metric("Most used Launchpad", most_used_location)
+st.divider()
+
+#-----------------------------
+# Map with missions by country
+#-----------------------------
 st.header("🌍 Global Launch Activity")
 st.write("This map shows the distribution of space missions across different countries. Darker colors indicate more launches.")
 fig = viz.create_missions_by_country_map(df)
@@ -72,6 +102,9 @@ st.plotly_chart(fig, use_container_width=True)
 
 st.divider()
 
+#-----------------------------
+# Company activity heatmap
+#-----------------------------
 st.header("📅 Company Activity Over Time")
 st.write("This heatmap displays when each company was most active in launching missions. Each row represents a company, and the color intensity shows the number of launches per year.")
 fig2 = viz.create_company_activity_heatmap(df)
@@ -79,6 +112,9 @@ st.plotly_chart(fig2, use_container_width=True)
 
 st.divider()
 
+#-----------------------------
+# Histograms
+#-----------------------------
 st.header("📊 Data Exploration")
 st.write("Create custom histograms to explore the distribution of different attributes in the dataset. Click 'Add histogram' to get started.")
 
